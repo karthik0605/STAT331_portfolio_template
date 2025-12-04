@@ -48,7 +48,13 @@ tax_rev <- read_csv('https://atheobold.github.io/groupworthy-data-science/labs/i
 ```{r}
 #| label: wd-1-xlsx
 
-# Haven't used
+# Practice Activity 4
+military <- read_xlsx("gov_spending_per_capita.xlsx",
+                      sheet = "Share of Govt. spending",
+                      skip  = 7,
+                      n_max = 191,
+                      na = c("xxx", ". .", "..")
+                      )
 ```
 
 **WD-2: I can select necessary columns from a dataset.**
@@ -227,13 +233,15 @@ facebook_event_checkin |>
 ```{r}
 #| label: wd-4-numeric-ex-1
 
-# Lab 3 Question 5
+# Lab 3 Question 5 (Modified to use names arguments for across syntax)
 teacher_evals_clean <- teacher_evals |>
     rename(sex = gender) |>
     filter(no_participants >= 10) |>
     mutate(
-      across(c(teacher_id, course_id), as.character),
-      across(c(question_no, no_participants, seniority), as.integer)
+      across(.cols = c(teacher_id, course_id), 
+             .fns = ~ as.character(.x)),
+      across(.cols = c(question_no, no_participants, seniority), 
+             .fns = ~ as.integer(.x))
     ) |>
     select(
       course_id,
@@ -416,10 +424,10 @@ ca_childcare <- left_join(x = ca_childcare,
 ```{r}
 #| label: wd-5-inner-ex-1
 
-# Challenge 4
+# Challenge 4 (Modified to use join_by instead of deprecated function)
 ca_childcare <- inner_join(
   center, family,
-  by = c("county_fips_code", "study_year", "age_group")
+  by = join_by(county_fips_code, study_year, age_group)
 )
 
 ```
@@ -547,10 +555,15 @@ ca_childcare |>
 The following assignments satisfy the above criteria:
 
 -   Example 1
+    -   Lab 2
 -   Example 2
+    -   Lab 3
 -   Example 3
+    -   Challenge 3
 -   Example 4
+    -   Lab 7
 -   Example 5
+    -   Lab 9
 
 **R-2: I can write well documented and tidy code.**
 
@@ -618,8 +631,36 @@ facebook_event_checkin |>
 ```{r}
 #| label: r-2-3
 
-# Haven't covered 
+# Lab 8 Question 3
+create_plot <- function(df, var_1, var_2) {
+  x_is_num <- is.numeric(pull(df, {{ var_1 }}))
+  y_is_num <- is.numeric(pull(df, {{ var_2 }}))
 
+  x_lab <- str_to_title(str_replace_all(as_label(enquo(var_1)), "_", " "))
+  y_lab <- str_to_title(str_replace_all(as_label(enquo(var_2)), "_", " "))
+  #https://www.rdocumentation.org/packages/rlang/versions/1.0.6/topics/as_label
+  #discusses use of enquo and label to use in multiple functions rather than {{}}
+  #which wont work for the str_r and label
+
+  p <- ggplot(df, aes(x = {{ var_1 }}, y = {{ var_2 }}, color = {{ var_1 }})) +
+        labs(title = glue::glue("Comparison of {y_lab} and {x_lab} for penguins"),
+             x = x_lab, 
+             y = y_lab, 
+             color = x_lab) +
+        theme_bw()
+  if (x_is_num && y_is_num) {
+      p <- p + geom_point(alpha = 0.8)
+  }
+  else if (x_is_num || y_is_num) {
+      p <- p + geom_jitter(alpha = 0.8)
+  }
+  else {
+    p <- p + geom_count()
+  }
+  
+  p + guides(color = "none")
+  #https://stackoverflow.com/questions/11714951/remove-extra-legends-in-ggplot2
+}
 ```
 
 **R-3: I can write robust programs that are resistant to changes in inputs.**
@@ -629,7 +670,12 @@ facebook_event_checkin |>
 ```{r}
 #| label: r-3-example
 
-# Haven't covered 
+# Lab 5 Part 2
+person |>
+  filter(address_street_name == "Northwestern Dr") |>
+  slice_max(address_number) |>
+  left_join(interview, by = join_by(id == person_id)) |>
+  select(transcript)
 ```
 
 -   Example (function stops)
@@ -637,8 +683,17 @@ facebook_event_checkin |>
 ```{r}
 #| label: r-3-function-stops
 
-# Haven't covered 
-
+# Challenge 7 Question 2
+replace_unlikely <- function(vec, min_val, max_val) {
+  if (!is.numeric(min_val)) {
+    stop()
+  }
+  if (!is.numeric(max_val)) {
+    stop()
+  }
+  vec[vec < min_val | vec > max_val] <- NA
+  vec
+}
 ```
 
 ## Data Visualization & Summarization
@@ -793,7 +848,7 @@ ggplot(data = surveys,
 ```{r}
 #| label: dvs-2-ex-3
 
-# Modified Lab 4 Question 8 to have the best titles
+# Modified Lab 4 Question 8 to have better titles
 ca_childcare |>
   ggplot(aes(x = mhi_2018, y = mc_infant)) +
   geom_point() +
@@ -897,8 +952,19 @@ teacher_evals_compare |>
 ```{r}
 #| label: dvs-3-2
 
-# Haven't covered
+# Modified Lab 8 Question 4 Test 1 to use descriptive text annotation
+my_plot <- ggplot(penguins, mapping = aes(x = species, fill = sex)) + 
+  geom_bar() +
+  geom_text(stat = "count",
+            aes(label = after_stat(count)),
+            position = position_stack(vjust = 0.5),
+            color = "white",
+            size = 3)
 
+style_plot(my_plot, 
+           theme_fn = theme_bw, 
+           palette = RColorBrewer::brewer.pal(3, "Paired"), 
+           aesthetic = "fill")
 ```
 
 -   I can choose creative geometries (e.g., `geom_segment()`, `geom_ribbon)()`)
@@ -906,7 +972,22 @@ teacher_evals_compare |>
 ```{r}
 #| label: dvs-3-3
 
-# Haven't covered
+# Modified Lab 10 Question 3 to do a different plot with geom_segment and geom_point
+ggplot(babies_data, aes(x = babies, y = prop)) +
+  geom_segment(aes(xend = babies, y = 0, yend = prop),
+               size = 1, color = "darkred") +
+  geom_point(size = 3, color = "darkred") +
+  scale_y_continuous(
+    labels = label_percent(),
+  ) +
+  labs(
+    title = "Proportion of Correctly Returned Babies from 10,000 Simulated Nights",
+    x = "Number of Babies Returned to the Correct Parent(s)",
+    y = "Proportion of Simulations"
+  ) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(face = "bold"))
 
 ```
 
@@ -932,13 +1013,15 @@ teacher_evals_clean |>
 ```{r}
 #| label: dvs-4-across
 
-# Lab 3 Question 5
+# Lab 3 Question 5 (Modified to use named arguments for across)
 teacher_evals_clean <- teacher_evals |>
     rename(sex = gender) |>
     filter(no_participants >= 10) |>
     mutate(
-      across(c(teacher_id, course_id), as.character),
-      across(c(question_no, no_participants, seniority), as.integer)
+      across(.cols = c(teacher_id, course_id), 
+             .fns = ~ as.character(.x)),
+      across(.cols = c(question_no, no_participants, seniority), 
+             .fns = ~ as.integer(.x))
     ) |>
     select(
       course_id,
@@ -1026,6 +1109,22 @@ ca_childcare |>
 ```{r}
 #| label: dvs-6-ex-2
 
+# Lab 9 Question 8
+map_int(fish, ~ sum(is.na(.x))) |>
+  enframe(name = "Measurement Variable", value = "Missing Values") |>
+  gt() |>
+  tab_header(
+    title    = "Number of Missing Values for Fish Measurements",
+    subtitle = "Data Collected from 1989 to 2006 on the Blackfoot Fish River in Montana"
+  ) |>
+  tab_options(column_labels.font.weight = "bold") |>
+   data_color(
+    columns = `Missing Values`,
+    fn = function(x) case_when(
+      x == 0 ~ "darkgreen", 
+      x >  0 ~ "darkred",  
+    )
+   )
 ```
 
 -   I can arrange my table to have an intuitive ordering
@@ -1098,26 +1197,18 @@ crime_scene_report |>
 ```{r}
 #| label: pe-1-across
 
-# Lab 3 Question 5
-teacher_evals_clean <- teacher_evals |>
-    rename(sex = gender) |>
-    filter(no_participants >= 10) |>
-    mutate(
-      across(c(teacher_id, course_id), as.character),
-      across(c(question_no, no_participants, seniority), as.integer)
-    ) |>
-    select(
-      course_id,
-      teacher_id,
-      question_no,
-      no_participants,
-      resp_share,
-      SET_score_avg,
-      percent_failed_cur,
-      academic_degree,
-      seniority,
-      sex
+# Lab 7 Question 1
+fish_missing <- fish |>
+  summarize(
+    obs_missing = sum(if_any(where(~ any(is.na(.x))), is.na)),
+    across(
+      .cols = where(~ any(is.na(.x))),   
+      .fns = ~ sum(is.na(.x)),
+      .names = "n_missing_{.col}"
     )
+  )
+
+fish_missing
 ```
 
 -   using functions from the `map()` family
@@ -1125,8 +1216,10 @@ teacher_evals_clean <- teacher_evals |>
 ```{r}
 #| label: pe-1-map-1
 
-# Haven't covered
-
+# Lab 10 Question 1
+results <- map_int(.x = 1:10000,
+                   .f = ~ randomBabies(4)
+                  )
 ```
 
 **PE-2: I can write functions to reduce repetition in my code.**
@@ -1136,7 +1229,17 @@ teacher_evals_clean <- teacher_evals |>
 ```{r}
 #| label: pe-2-1
 
-# Haven't covered
+# Challenge 7 Question 2
+replace_unlikely <- function(vec, min_val, max_val) {
+  if (!is.numeric(min_val)) {
+    stop()
+  }
+  if (!is.numeric(max_val)) {
+    stop()
+  }
+  vec[vec < min_val | vec > max_val] <- NA
+  vec
+}
 ```
 
 -   Example 2: Function that operates on data frames
@@ -1144,7 +1247,18 @@ teacher_evals_clean <- teacher_evals |>
 ```{r}
 #| label: pe-2-2
 
-#Haven't covered
+# Lab 8 Question 2
+pivot_table <- function(data, row_var, col_var) {
+  data |>
+    count({{ row_var }}, 
+          {{ col_var }}) |>
+    pivot_wider(
+      names_from  = {{ col_var }},
+      values_from = n,
+      values_fill = 0
+    ) |>
+    janitor::adorn_totals("both")
+}
 ```
 
 -   Example 3: Function that operates on vectors *or* data frames
@@ -1152,7 +1266,26 @@ teacher_evals_clean <- teacher_evals |>
 ```{r}
 #| label: pe-2-3
 
-#Haven't covered
+# Lab 10 Question 1
+rescale_01 <- function(vec){
+  if(!is.numeric(vec)) {
+    stop()
+  }
+  if(length(vec) <= 1){
+    stop()
+  }
+
+  rng <- range(vec, na.rm = TRUE)
+  width <- diff(rng)
+
+  (vec - rng[1]) / width
+}
+  
+rescale_column <- function(df, cols) {
+    df |>
+      mutate(across(.cols = {{ cols }}, 
+                    .fns = ~ rescale_01(.x)))
+}
 ```
 
 **PE-3:I can use iteration to reduce repetition in my code.**
@@ -1162,7 +1295,26 @@ teacher_evals_clean <- teacher_evals |>
 ```{r}
 #| label: pe-3-across
 
-#Haven't covered
+# Lab 8 Question 1 (Modified to use named arguments for across)
+rescale_01 <- function(vec){
+  if(!is.numeric(vec)) {
+    stop()
+  }
+  if(length(vec) <= 1){
+    stop()
+  }
+
+  rng <- range(vec, na.rm = TRUE)
+  width <- diff(rng)
+
+  (vec - rng[1]) / width
+}
+  
+rescale_column <- function(df, cols) {
+    df |>
+      mutate(across(.cols = {{ cols }}, 
+                    .fns = ~ rescale_01(.x)))
+}
 ```
 
 -   using a `map()` function with **one** input (e.g., `map()`, `map_chr()`, `map_dbl()`, etc.)
@@ -1170,15 +1322,20 @@ teacher_evals_clean <- teacher_evals |>
 ```{r}
 #| label: pe-3-map-1
 
-#Haven't covered
+# Lab 9 Question 2
+map_chr(surveys, typeof) |>
+  enframe(name = "Variable", value = "Data Type") |>
+  kable()
 ```
 
--   using a `map()` function with **more than one** input (e.g., `map_2()` or `pmap()`)
+-   using a `map()` function with **one** input
 
 ```{r}
 #| label: pe-3-map-2
 
-#Haven't covered
+# Lab 9 Question 4
+evals_new <- map_if(evals, is.character, as.factor) |>
+  bind_cols()
 ```
 
 **PE-4: I can use modern tools when carrying out my analysis.**
@@ -1246,7 +1403,24 @@ ca_childcare |>
 ```{r}
 #| label: dsm-1-1
 
-# Haven't covered
+# Lab 10 Question 4
+# define slope and intercept parameters
+intercept = 2
+slope = 1
+
+# generate x vector
+x = runif(n = 100, min = 0, max = 1)
+
+# generate noise `ep` vector
+ep = rnorm(n = 100, mean = 0, sd = 1)
+
+# generate outcome from population model
+y = intercept + x*slope + ep
+
+
+# create an "observed data" dataframe with only the x and y vectors
+obs_data <- data.frame(x, y)
+obs_data
 ```
 
 -   Example 2
@@ -1254,7 +1428,29 @@ ca_childcare |>
 ```{r}
 #| label: dsm-1-2
 
-# Haven't covered
+# Lab 10 Question 8
+mycifun <- function(beta0, beta1, n) {
+  x  <- runif(n, min = 0, max = 1)
+  ep <- rnorm(n, mean = 0, sd = 1)  
+  y  <- beta0 + beta1 * x + ep
+  obs_data <- data.frame(x, y)
+
+  model <- lm(y ~ x, data = obs_data)
+
+  model_tidy <- tidy(model, conf.int = TRUE)
+  
+  model_tidy |>
+    mutate(cover = ifelse(term == "x" &
+                            beta1 >= conf.low &
+                            beta1 <= conf.high, 1, 0)) |>
+    filter(term == "x") |>
+    select(
+      slope_hat = estimate,
+      ci_low = conf.low,
+      ci_high = conf.high,
+      cover
+    )
+}
 ```
 
 **DSSM-2: I can conduct common statistical analyses in R.**
@@ -1264,7 +1460,9 @@ ca_childcare |>
 ```{r}
 #| label: dsm-2-1
 
-# Haven't covered
+# Lab 2 Question 17
+species_mod <- aov(weight ~ species, data = surveys)
+summary(species_mod)
 ```
 
 -   Example 2
@@ -1272,7 +1470,10 @@ ca_childcare |>
 ```{r}
 #| label: dsm-2-2
 
-# Haven't covered
+# Lab 4 Question 9
+reg_mod1 <- lm(mc_infant ~ mhi_2018, data = ca_childcare)
+summary(reg_mod1)
+
 ```
 
 -   Example 3
@@ -1280,14 +1481,15 @@ ca_childcare |>
 ```{r}
 #| label: dsm-2-3
 
-# Haven't covered
+#Lab 1 Question 9
+t.test(len ~ supp, data = ToothGrowth)
 ```
 
 ## Revising My Thinking
 
 <!-- How did you revise your thinking throughout the course? How did you revise your thinking on the code examples you have provided in your portfolio? -->
 
-Throghout the course, I spent a lot of time looking back on code I got feedback for. The nature of the feedback varies, from peer feedback to professor feedback, but there was usually something to change, whether small or big. While I just kept the small changes in the back of my mine, I usually went and resubmitted any larger changes. Oftentimes, the feedback helped me consider different approaches to my work, and made my work cleaner or more understandable. For instance, I received a lot of feedback about making my labels and titles more descriptive, which I keep in mine for future assignments. For the code examples in the portfolio, this was also valuable as I once again went back and searched for what code chunks were the best examples for each of the learning targets. It allowed me to really think about what a code chunk is doing, and again if there are any other better ways to do something.
+Throughout the course, I spent a lot of time looking back on code I got feedback for. The nature of the feedback varies, from peer feedback to professor feedback, but there was usually something to change, whether small or big. While I just kept the small changes in the back of my mine, I usually went and resubmitted any larger changes. Oftentimes, the feedback helped me consider different approaches to my work, and made my work cleaner or more understandable. For instance, I received a lot of feedback about making my labels and titles more descriptive, which I keep in mine for future assignments. For the code examples in the portfolio, this was also valuable as I once again went back and searched for what code chunks were the best examples for each of the learning targets. It allowed me to really think about what a code chunk is doing, and again if there are any other better ways to do something.
 
 <!-- For the revisions included in your Portfolio, to help me understand the nature of your revisions, please denote somehow the feedback I provided you (e.g., boldface, italics, colored text) before your revisions. -->
 
