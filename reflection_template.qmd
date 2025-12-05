@@ -15,6 +15,26 @@ execute:
 
 [**Learning Objective Evidence:**]{.underline} In the code chunks below, provide code from Lab or Challenge assignments where you believe you have demonstrated proficiency with the specified learning target. Be sure to specify **where** the code came from (e.g., Lab 4 Question 2).
 
+[**Teacher Feedback Which Led To Revisions In This Portfolio**]{.underline}
+
+**Lab 3 Question 5: It looks like you are doing the same function across multiple columns...I'd recommend a more efficient tool!\
+\
+Should teacher_id be treated as a numerical variable? These are a proxy for a teacher’s name. If the variable was a teacher’s name then it would be read in as a character...\
+\
+Should course_id be treated as a numerical variable? These are a proxy for a course subject and number. If the variable was recorded as STAT 331 then it would be read in as a character...**
+
+**Lab 4 Question 7:** **I would encourage you to use named arguments, so your code is easier to understand!**
+
+**Lab 4 Question 5: Can you give your column names better titles, so the reader knows what "2008" and "2018" represent? What are the values stored in these columns?\
+\
+Notice that your table still has a grouping variable! Because you grouped by \*\*two\*\* variables, your first group was not dropped!**
+
+**Challenge 7 Question 2: It looks like you are checking multiple conditions in your if_else() function. This is exactly what the case_when() function is built for!**
+
+**Lab 8 Question 1: This code works but doesn’t use the most current code formatting for across()! Could you used named arguments? Could you incorporate the \~ and .x into the rescale_01() function?\
+\
+Input checks for data frame functions are tricky, but an easy one is to check if the data frame being input is actually a data frame (not a vector or a matrix).**
+
 ## Working with Data
 
 **WD-1: I can import data from a *variety* of formats (e.g., csv, xlsx, txt, etc.).**
@@ -25,7 +45,6 @@ execute:
 #| label: wd-1-csv-1
 
 # Lab 3 Question 2
-
 teacher_evals <- read_csv(here::here("Week3", "Lab3", "teacher_evals.csv"))
 ```
 
@@ -64,7 +83,7 @@ military <- read_xlsx("gov_spending_per_capita.xlsx",
 ```{r}
 #| label: wd-2-ex-1
 
-# Lab 3 Question 5
+# Lab 3 Question 5 (Modified to use across instead of repeated functions, used different types)
 teacher_evals_clean <- teacher_evals |>
     rename(sex = gender) |>
     filter(no_participants >= 10) |>
@@ -141,13 +160,17 @@ ca_childcare |>
 ```{r}
 #| label: wd-3-numeric-ex-1
 
-# Lab 4 Question 5
-ca_childcare |> 
+# Modified Lab 4 Question 5 to have better numerical column names
+ca_childcare |>
   filter(study_year %in% c(2008, 2018)) |>
+  mutate(mhi_2018_k = mhi_2018 / 1000) |>
   group_by(region, study_year) |>
-  summarize(median_income = median(mhi_2018)) |>
-  pivot_wider(names_from = study_year,
-              values_from = median_income) |>
+  summarize(median_income_k = median(mhi_2018_k), .groups = "drop") |>
+  pivot_wider(names_from = study_year, values_from = median_income_k) |>
+  mutate(
+    change_08_18_k = `2018` - `2008`,
+    pct_change_08_18 = 100 * change_08_18_k / `2008`
+  ) |>
   arrange(desc(`2018`))
 ```
 
@@ -156,7 +179,7 @@ ca_childcare |>
 ```{r}
 #| label: wd-3-numeric-ex-2
 
-#Lab 3 Question 5
+# Lab 3 Question 5 (Modified to use across instead of repeated functions, used different types)
 teacher_evals_clean <- teacher_evals |>
     rename(sex = gender) |>
     filter(no_participants >= 10) |>
@@ -233,7 +256,7 @@ facebook_event_checkin |>
 ```{r}
 #| label: wd-4-numeric-ex-1
 
-# Lab 3 Question 5 (Modified to use names arguments for across syntax)
+# Lab 3 Question 5 (Modified to use across instead of repeated functions, used different types)
 teacher_evals_clean <- teacher_evals |>
     rename(sex = gender) |>
     filter(no_participants >= 10) |>
@@ -263,7 +286,6 @@ teacher_evals_clean <- teacher_evals |>
 #| label: wd-4-numeric-ex-2
 
 # Modified Lab 4 Question 5 to have better numerical column names
-
 ca_childcare |>
   filter(study_year %in% c(2008, 2018)) |>
   mutate(mhi_2018_k = mhi_2018 / 1000) |>
@@ -303,7 +325,7 @@ ca_childcare <- ca_childcare |>
 ```{r}
 #| label: wd-4-factor-ex-2
 
-# Lab 4 Question 7
+# Modified Lab 4 Question 7 to use named arguments
 ca_childcare |>
   rename(
       Infant = mc_infant,
@@ -398,8 +420,6 @@ ca_childcare <- left_join(x = childcare_costs,
 #| label: wd-5-right
 
 # Modified Lab 5 Part 2 to be right join instead of left
-
-#| label: wd-5-left-right-ex-2
 person |>
   filter(address_street_name == "Northwestern Dr") |>
   slice_max(address_number) |>
@@ -437,7 +457,7 @@ ca_childcare <- inner_join(
 ```{r}
 #| label: wd-5-inner-ex-2
 
-# Modified Lab 5 Part 3
+# Modified Lab 5 Part 3 to use inner join
 get_fit_now_member |>
   inner_join(get_fit_now_check_in, by = join_by(id == membership_id)) |>
   mutate(check_in_date = ymd(check_in_date)) |>
@@ -461,8 +481,6 @@ get_fit_now_member |>
 #| label: wd-6-semi
 
 # Modified two parts of Lab 5 and joined into a semi-join for interviews
-
-#| label: wd-5-semi
 new_suspect <- facebook_event_checkin |>
   mutate(date = ymd(date)) |>
   filter(event_name == "SQL Symphony Concert",
@@ -489,11 +507,10 @@ interview |>
 ```{r}
 #| label: wd-6-anti
 
-# Modified Lab 5 Part 5 to use anti-joins for suspects who weren't interviewed
+# Modified Lab 5 Part 5 to use anti-joins for suspects who weren't interviewed to find the final killer
 person |>
   filter(name == "Miranda Priestly") |>
   anti_join(interview, by = join_by(id == person_id))
-
 ```
 
 **WD-7: I can pivot dataframes from long to wide and visa versa**
@@ -503,7 +520,7 @@ person |>
 ```{r}
 #| label: wd-7-long
 
-# Lab 4 Question 7
+# Modified Lab 4 Question 7 to use named arguments
 a_childcare |>
   rename(
       Infant = mc_infant,
@@ -538,13 +555,17 @@ a_childcare |>
 ```{r}
 #| label: wd-7-wide
 
-# Lab 4 Question 5
-ca_childcare |> 
+# Modified Lab 4 Question 5 to have better numerical column names
+ca_childcare |>
   filter(study_year %in% c(2008, 2018)) |>
+  mutate(mhi_2018_k = mhi_2018 / 1000) |>
   group_by(region, study_year) |>
-  summarize(median_income = median(mhi_2018)) |>
-  pivot_wider(names_from = study_year,
-              values_from = median_income) |>
+  summarize(median_income_k = median(mhi_2018_k), .groups = "drop") |>
+  pivot_wider(names_from = study_year, values_from = median_income_k) |>
+  mutate(
+    change_08_18_k = `2018` - `2008`,
+    pct_change_08_18 = 100 * change_08_18_k / `2008`
+  ) |>
   arrange(desc(`2018`))
 ```
 
@@ -572,7 +593,7 @@ The following assignments satisfy the above criteria:
 ```{r}
 #| label: r-2-1
 
-# Lab 4 Question 7
+# Modified Lab 4 Question 7 to use named arguments
 a_childcare |>
   rename(
       Infant = mc_infant,
@@ -721,7 +742,7 @@ ca_childcare |>
 ```{r}
 #| label: dvs-2-num-cat
 
-# Lab 4 Question 7
+# Modified Lab 4 Question 7 to use named arguments
 a_childcare |>
   rename(
       Infant = mc_infant,
@@ -798,7 +819,7 @@ ggplot(ca_childcare, aes(x = study_year, y = median_price, color = age_group)) +
 ```{r}
 #| label: dvs-2-ex-1
 
-# Lab 4 Question 7
+# Modified Lab 4 Question 7 to use named arguments
 a_childcare |>
   rename(
       Infant = mc_infant,
@@ -866,13 +887,22 @@ ca_childcare |>
 ```{r}
 #| label: dvs-2-ex-4
 
-# Lab 2 Question 15
-ggplot(data = surveys, 
-       mapping = aes(x = species, y = weight)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_jitter(color = "orange3", alpha = 0.3) +
-  labs(x = "Species", y = "Weight (grams)") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# Lab 9 Question 8
+map_int(fish, ~ sum(is.na(.x))) |>
+  enframe(name = "Measurement Variable", value = "Missing Values") |>
+  gt() |>
+  tab_header(
+    title    = "Number of Missing Values for Fish Measurements",
+    subtitle = "Data Collected from 1989 to 2006 on the Blackfoot Fish River in Montana"
+  ) |>
+  tab_options(column_labels.font.weight = "bold") |>
+   data_color(
+    columns = `Missing Values`,
+    fn = function(x) case_when(
+      x == 0 ~ "darkgreen", 
+      x >  0 ~ "darkred",  
+    )
+   )
 
 ```
 
@@ -881,7 +911,7 @@ ggplot(data = surveys,
 ```{r}
 #| label: dvs-2-ex-5
 
-# Lab 4 Question 7
+# Modified Lab 4 Question 7 to use named arguments
 ca_childcare |>
   rename(
       Infant = mc_infant,
@@ -918,14 +948,23 @@ ca_childcare |>
 ```{r}
 #| label: dvs-3-1-ex-1
 
-# Challenge 2 
-ggplot(data = surveys, 
-       mapping = aes(y = species, x = weight, color = sex)) +
-  geom_boxplot(outlier.shape = NA) +
-  labs(x = "Weight (grams)", y = "Species") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  theme_bw() + # Not part of the challenge, but wants to make the yellow pop out more
-  scale_color_viridis_d() # Used this as it gave yellow and purple, the color scheme mentioned in class as best
+# Lab 8 Question 4
+style_plot <- function(p,
+                       theme_fn = theme_minimal,
+                       palette  = RColorBrewer::brewer.pal(3, "Dark2"),
+                       aesthetic) {
+  
+  p <- p + theme_fn()
+
+  if (aesthetic == "fill") {
+    p <- p + scale_fill_manual(values = palette, na.translate = FALSE)
+  } else {
+    p <- p + scale_color_manual(values = palette, na.translate = FALSE)
+    #https://stackoverflow.com/questions/74695984/drop-na-values-from-scale-fill-either-in-aesthetics-or-in-the-scale
+  }
+  
+  p
+}
 ```
 
 -   I can use non-standard colors (Example 2)
@@ -1013,28 +1052,21 @@ teacher_evals_clean |>
 ```{r}
 #| label: dvs-4-across
 
-# Lab 3 Question 5 (Modified to use named arguments for across)
-teacher_evals_clean <- teacher_evals |>
-    rename(sex = gender) |>
-    filter(no_participants >= 10) |>
-    mutate(
-      across(.cols = c(teacher_id, course_id), 
-             .fns = ~ as.character(.x)),
-      across(.cols = c(question_no, no_participants, seniority), 
-             .fns = ~ as.integer(.x))
-    ) |>
-    select(
-      course_id,
-      teacher_id,
-      question_no,
-      no_participants,
-      resp_share,
-      SET_score_avg,
-      percent_failed_cur,
-      academic_degree,
-      seniority,
-      sex
-    )
+# Lab 7 Question 3
+missing_values <- fish |>
+  group_by(year, section, trip) |>
+  summarise(
+    across(.cols = all_of(vars_na), 
+           .fns = ~ mean(is.na(.x)), 
+           .names = "pct_missing_{.col}"),
+    .groups = "drop"
+  ) |>
+  pivot_longer(
+    cols = starts_with("pct_missing_"),
+    names_to = "variable",
+    names_prefix = "pct_missing_",
+    values_to = "pct_missing"
+  )
 ```
 
 **DVS-5: I can find summaries of variables across multiple groups.**
@@ -1044,15 +1076,18 @@ teacher_evals_clean <- teacher_evals |>
 ```{r}
 #| label: dvs-5-1
 
-# Lab 4 Question 5
-ca_childcare |> 
+# Modified Lab 4 Question 5 to have better numerical column names
+ca_childcare |>
   filter(study_year %in% c(2008, 2018)) |>
+  mutate(mhi_2018_k = mhi_2018 / 1000) |>
   group_by(region, study_year) |>
-  summarize(median_income = median(mhi_2018)) |>
-  pivot_wider(names_from = study_year,
-              values_from = median_income) |>
+  summarize(median_income_k = median(mhi_2018_k), .groups = "drop") |>
+  pivot_wider(names_from = study_year, values_from = median_income_k) |>
+  mutate(
+    change_08_18_k = `2018` - `2008`,
+    pct_change_08_18 = 100 * change_08_18_k / `2008`
+  ) |>
   arrange(desc(`2018`))
-
 ```
 
 -   Example 2
@@ -1060,10 +1095,10 @@ ca_childcare |>
 ```{r}
 #| label: dvs-5-2
 
-# Lab 3 Question 12
+# Lab 3 Question 12 
 teacher_evals_clean |>
-  group_by(teacher_id, seniority, sex) |>
   filter(academic_degree %in% c("dr", "prof")) |>
+  group_by(teacher_id, seniority, sex) |>
   summarize(mean_resp = mean(resp_share, na.rm = TRUE), .groups = "drop") |>
   arrange(desc(mean_resp))
 ```
@@ -1075,33 +1110,18 @@ teacher_evals_clean |>
 ```{r}
 #| label: dvs-6-ex-1
 
-# Lab 4 Question 7
+# Modified Lab 4 Question 5 to have better column names w/ context
 ca_childcare |>
-  rename(
-      Infant = mc_infant,
-      Toddler = mc_toddler,
-      Preschool = mc_preschool
-  ) |>
-  pivot_longer(cols = c(Infant, Toddler, Preschool),
-               names_to = "age_group",
-               values_to = "median_price"
-               ) |>
+  filter(study_year %in% c(2008, 2018)) |>
+  mutate(mhi_2018_k = mhi_2018 / 1000) |>
+  group_by(region, study_year) |>
+  summarize(median_income_k = median(mhi_2018_k), .groups = "drop") |>
+  pivot_wider(names_from = study_year, values_from = median_income_k) |>
   mutate(
-    region = fct_reorder2(region, study_year, median_price),
-    age_group = fct_relevel(age_group, "Infant", "Toddler", "Preschool")
+    change_08_18_k = `2018` - `2008`,
+    pct_change_08_18 = 100 * change_08_18_k / `2008`
   ) |>
-  ggplot(mapping = aes(x = study_year, y = median_price, color = region)) +
-    geom_point() +
-    scale_x_continuous(breaks = seq(2008, 2018, 2)) +
-    scale_y_continuous(breaks = seq(0, 500, 100),
-                       limits = c(100, 500)) + #https://ggplot2.tidyverse.org/reference/scale_continuous.html
-    facet_wrap(~ age_group) +
-    geom_smooth(method = "loess") +
-    theme_bw() +
-    labs(title = "Weekly Median Price for Center-Based Childcare ($)",
-         x = "Study Year",
-         y = NULL,
-         color = "California Region") 
+  arrange(desc(`2018`))
 ```
 
 -   I can modify the text in my table to be more readable (e.g., bold face for column headers)
@@ -1132,13 +1152,17 @@ map_int(fish, ~ sum(is.na(.x))) |>
 ```{r}
 #| label: dvs-6-ex-3
 
-# Lab 4 Question 5
-ca_childcare |> 
+# Modified Lab 4 Question 5 to have better numerical column names
+ca_childcare |>
   filter(study_year %in% c(2008, 2018)) |>
+  mutate(mhi_2018_k = mhi_2018 / 1000) |>
   group_by(region, study_year) |>
-  summarize(median_income = median(mhi_2018)) |>
-  pivot_wider(names_from = study_year,
-              values_from = median_income) |>
+  summarize(median_income_k = median(mhi_2018_k), .groups = "drop") |>
+  pivot_wider(names_from = study_year, values_from = median_income_k) |>
+  mutate(
+    change_08_18_k = `2018` - `2008`,
+    pct_change_08_18 = 100 * change_08_18_k / `2008`
+  ) |>
   arrange(desc(`2018`))
 ```
 
@@ -1164,13 +1188,17 @@ ggplot(data = surveys,
 ```{r}
 #| label: dvs-7-ex-2
 
-# Lab 4 Question 5
-ca_childcare |> 
+# Modified Lab 4 Question 5 to have better numerical column names
+ca_childcare |>
   filter(study_year %in% c(2008, 2018)) |>
+  mutate(mhi_2018_k = mhi_2018 / 1000) |>
   group_by(region, study_year) |>
-  summarize(median_income = median(mhi_2018)) |>
-  pivot_wider(names_from = study_year,
-              values_from = median_income) |>
+  summarize(median_income_k = median(mhi_2018_k), .groups = "drop") |>
+  pivot_wider(names_from = study_year, values_from = median_income_k) |>
+  mutate(
+    change_08_18_k = `2018` - `2008`,
+    pct_change_08_18 = 100 * change_08_18_k / `2008`
+  ) |>
   arrange(desc(`2018`))
 ```
 
@@ -1345,7 +1373,7 @@ evals_new <- map_if(evals, is.character, as.factor) |>
 ```{r}
 #| label: pe-4-1
 
-# Lab 5 Part 3
+# Lab 5 Part 3 (Uses join_by)
 get_fit_now_member |>
   left_join(get_fit_now_check_in, by = join_by(id == membership_id)) |>
   mutate(check_in_date = ymd(check_in_date)) |>
@@ -1365,7 +1393,7 @@ get_fit_now_member |>
 ```{r}
 #| label: pe-4-2
 
-# Lab 4 Question 7
+# Modified Lab 4 Question 7 to use named arguments
 ca_childcare |>
   rename(
       Infant = mc_infant,
@@ -1481,7 +1509,7 @@ summary(reg_mod1)
 ```{r}
 #| label: dsm-2-3
 
-#Lab 1 Question 9
+# Lab 1 Question 9
 t.test(len ~ supp, data = ToothGrowth)
 ```
 
@@ -1489,11 +1517,11 @@ t.test(len ~ supp, data = ToothGrowth)
 
 <!-- How did you revise your thinking throughout the course? How did you revise your thinking on the code examples you have provided in your portfolio? -->
 
-Throughout the course, I spent a lot of time looking back on code I got feedback for. The nature of the feedback varies, from peer feedback to professor feedback, but there was usually something to change, whether small or big. While I just kept the small changes in the back of my mine, I usually went and resubmitted any larger changes. Oftentimes, the feedback helped me consider different approaches to my work, and made my work cleaner or more understandable. For instance, I received a lot of feedback about making my labels and titles more descriptive, which I keep in mine for future assignments. For the code examples in the portfolio, this was also valuable as I once again went back and searched for what code chunks were the best examples for each of the learning targets. It allowed me to really think about what a code chunk is doing, and again if there are any other better ways to do something.
+Throughout the course, I spent a lot of time looking back on code I got feedback for. The nature of the feedback varies, from peer feedback to professor feedback, but there was usually something to change, whether small or big. While I just kept the small changes in the back of my mine, I usually went and resubmitted any larger changes. Oftentimes, the feedback helped me consider different approaches to my work, and made my work cleaner or more understandable. For instance, I received a lot of feedback about making my labels and titles more descriptive, which I keep in mine for future assignments. For the code examples in the portfolio, this was also valuable as I once again went back and searched for what code chunks were the best examples for each of the learning targets. It allowed me to really think about what a code chunk is doing, and again if there are any other better ways to do something. I also received a lot of good feedback when I submitted this portfolio for the midterm. I made sure to address every single comment made of my midterm portfolio submission, and this once again reinforced syntactical and logical ideas specific to R.
 
 <!-- For the revisions included in your Portfolio, to help me understand the nature of your revisions, please denote somehow the feedback I provided you (e.g., boldface, italics, colored text) before your revisions. -->
 
-Will do the boldface in my final reflection, or after meeting on Monday. Mostly had to do with different descriptions/labels, or different ways of using dplyr functions.
+Included at the top of the file.
 
 ## Extending My Thinking
 
@@ -1505,7 +1533,7 @@ Throughout the course, I found a common theme to be that much of the course cont
 
 <!-- Include an image or a description of feedback you gave that you are proud of (either in a peer review or in Discord). -->
 
-![](images/clipboard-3372051854.png)
+![](images/clipboard-3992374880.png)
 
 <!-- Include a description of how you grew as a collaborator through the weekly pair programming activities.   -->
 
